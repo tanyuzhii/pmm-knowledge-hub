@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PMM Knowledge Hub</title>
+  <style>
+    :root {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --kimi-font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --kimi-color-text-primary: #1a1a1a;
+      --kimi-color-text-secondary: #555555;
+      --kimi-color-text-tertiary: #888888;
+      --kimi-color-text-quaternary: #aaaaaa;
+      --kimi-color-border: #e5e5e5;
+      --kimi-color-surface: #fafafa;
+      --kimi-chart-1: #2563eb;
+      --kimi-chart-2: #dc2626;
+      --kimi-chart-3: #16a34a;
+      --kimi-chart-4: #7c3aed;
+      --kimi-chart-5: #6b7280;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --kimi-color-text-primary: #f5f5f5;
+        --kimi-color-text-secondary: #b0b0b0;
+        --kimi-color-text-tertiary: #808080;
+        --kimi-color-text-quaternary: #606060;
+        --kimi-color-border: #333333;
+        --kimi-color-surface: #1a1a1a;
+      }
+    }
+    body { margin: 0; background: var(--kimi-color-surface); color: var(--kimi-color-text-primary); }
+    button, input, select, textarea { font: inherit; }
+    svg text { font-family: var(--kimi-font-sans); }
+
+    .hub-wrapper { max-width: 900px; margin: 0 auto; padding: 24px 16px; }
+    .hub-header { text-align: center; margin-bottom: 28px; }
+    .hub-header h1 { font-size: 22px; font-weight: 700; margin: 0 0 6px 0; letter-spacing: -0.3px; }
+    .hub-header p { font-size: 13px; color: var(--kimi-color-text-secondary); margin: 0; }
+    .tab-bar { display: flex; gap: 4px; border-bottom: 1px solid var(--kimi-color-border); margin-bottom: 20px; }
+    .tab-btn { padding: 8px 16px; font-size: 13px; font-weight: 600; color: var(--kimi-color-text-tertiary); background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; position: relative; top: 1px; }
+    .tab-btn:hover { color: var(--kimi-color-text-primary); }
+    .tab-btn.active { color: var(--kimi-color-text-primary); border-bottom-color: var(--kimi-color-text-primary); }
+
+    .search-box { position: relative; margin-bottom: 20px; }
+    .search-box input { width: 100%; padding: 10px 14px 10px 38px; font-size: 14px; border: 1px solid var(--kimi-color-border); border-radius: 10px; background: var(--kimi-color-surface); color: var(--kimi-color-text-primary); outline: none; box-sizing: border-box; }
+    .search-box input:focus { border-color: var(--kimi-color-text-primary); }
+    .search-box .icon-search { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; opacity: 0.5; }
+    .search-box .icon-search svg { width: 100%; height: 100%; stroke: var(--kimi-color-text-tertiary); fill: none; stroke-width: 2; stroke-linecap: round; }
+
+    .filter-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
+    .filter-chip { padding: 4px 10px; font-size: 12px; font-weight: 500; border-radius: 6px; border: 1px solid var(--kimi-color-border); background: transparent; color: var(--kimi-color-text-secondary); cursor: pointer; }
+    .filter-chip:hover { border-color: var(--kimi-color-text-primary); color: var(--kimi-color-text-primary); }
+    .filter-chip.active { background: var(--kimi-color-text-primary); color: var(--kimi-color-surface); border-color: var(--kimi-color-text-primary); }
+    .filter-label { font-size: 11px; color: var(--kimi-color-text-quaternary); text-transform: uppercase; letter-spacing: 0.5px; margin-right: 4px; }
+
+    .asset-list { display: flex; flex-direction: column; gap: 10px; }
+    .asset-card { display: flex; align-items: flex-start; gap: 14px; padding: 14px 16px; border: 1px solid var(--kimi-color-border); border-radius: 10px; background: var(--kimi-color-surface); cursor: pointer; transition: all 0.15s ease; }
+    .asset-card:hover { border-color: var(--kimi-color-text-primary); transform: translateY(-1px); }
+    .asset-icon { width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 18px; }
+    .asset-icon.deck { background: rgba(37,99,235,0.12); }
+    .asset-icon.sheet { background: rgba(22,163,74,0.12); }
+    .asset-icon.doc { background: rgba(124,58,237,0.12); }
+    .asset-icon.video { background: rgba(220,38,38,0.12); }
+    .asset-icon.battle { background: rgba(107,114,128,0.12); }
+    .asset-icon.case { background: rgba(37,99,235,0.12); }
+    .asset-body { flex: 1; min-width: 0; }
+    .asset-title { font-size: 14px; font-weight: 600; margin: 0 0 4px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .asset-desc { font-size: 12px; color: var(--kimi-color-text-secondary); margin: 0 0 8px 0; line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .asset-meta { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .asset-tag { font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 500; }
+    .tag-stage { background: rgba(37,99,235,0.1); color: #2563eb; }
+    .tag-audience { background: rgba(124,58,237,0.1); color: #7c3aed; }
+    .tag-type { background: rgba(107,114,128,0.1); color: var(--kimi-color-text-secondary); }
+    .tag-date { background: none; color: var(--kimi-color-text-quaternary); padding: 2px 0; }
+    .asset-action { font-size: 12px; font-weight: 600; color: var(--kimi-color-text-primary); padding: 6px 12px; border: 1px solid var(--kimi-color-border); border-radius: 8px; background: none; cursor: pointer; white-space: nowrap; }
+    .asset-action:hover { background: var(--kimi-color-text-primary); color: var(--kimi-color-surface); border-color: var(--kimi-color-text-primary); }
+    .results-count { font-size: 12px; color: var(--kimi-color-text-quaternary); margin-bottom: 12px; }
+
+    .glossary-layout { display: grid; grid-template-columns: 200px 1fr; gap: 20px; }
+    .glossary-nav { display: flex; flex-direction: column; gap: 2px; }
+    .glossary-nav-item { padding: 8px 12px; font-size: 13px; font-weight: 500; color: var(--kimi-color-text-secondary); border-radius: 8px; cursor: pointer; border: none; background: none; text-align: left; }
+    .glossary-nav-item:hover { background: var(--kimi-color-surface); color: var(--kimi-color-text-primary); }
+    .glossary-nav-item.active { background: var(--kimi-color-text-primary); color: var(--kimi-color-surface); }
+    .glossary-content { border-left: 1px solid var(--kimi-color-border); padding-left: 20px; }
+    .term-card { padding: 16px 0; border-bottom: 1px solid var(--kimi-color-border); }
+    .term-card:last-child { border-bottom: none; }
+    .term-header { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; flex-wrap: wrap; }
+    .term-name { font-size: 15px; font-weight: 700; margin: 0; }
+    .term-badge { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 2px 8px; border-radius: 4px; }
+    .badge-product { background: rgba(37,99,235,0.12); color: #2563eb; }
+    .badge-marketing { background: rgba(124,58,237,0.12); color: #7c3aed; }
+    .badge-sales { background: rgba(22,163,74,0.12); color: #16a34a; }
+    .badge-technical { background: rgba(107,114,128,0.12); color: #6b7280; }
+    .badge-strategy { background: rgba(220,38,38,0.12); color: #dc2626; }
+    .term-def { font-size: 13px; color: var(--kimi-color-text-secondary); line-height: 1.6; margin: 0 0 10px 0; }
+    .term-aliases { font-size: 12px; color: var(--kimi-color-text-quaternary); margin: 0; }
+    .term-aliases strong { color: var(--kimi-color-text-secondary); font-weight: 600; }
+    .term-usage { margin-top: 10px; padding: 10px 12px; background: var(--kimi-color-surface); border-radius: 8px; font-size: 12px; color: var(--kimi-color-text-secondary); line-height: 1.5; border-left: 3px solid var(--kimi-color-text-quaternary); }
+    .term-usage-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--kimi-color-text-quaternary); margin-bottom: 4px; display: block; }
+    .empty-state { text-align: center; padding: 48px 20px; color: var(--kimi-color-text-quaternary); }
+    .empty-state svg { width: 48px; height: 48px; margin-bottom: 12px; stroke: var(--kimi-color-text-quaternary); fill: none; stroke-width: 1.5; }
+    .empty-state p { font-size: 14px; margin: 0; }
+
+    @media (max-width: 640px) {
+      .glossary-layout { grid-template-columns: 1fr; }
+      .glossary-content { border-left: none; padding-left: 0; border-top: 1px solid var(--kimi-color-border); padding-top: 16px; }
+      .glossary-nav { flex-direction: row; flex-wrap: wrap; gap: 6px; }
+      .glossary-nav-item { padding: 6px 10px; font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="hub-wrapper">
+    <div class="hub-header">
+      <h1>PMM Knowledge Hub</h1>
+      <p>Assets & aligned terminology for commercial teams</p>
+    </div>
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="assets" onclick="switchTab('assets')">Asset Library</button>
+      <button class="tab-btn" data-tab="glossary" onclick="switchTab('glossary')">Glossary / Mini-Wiki</button>
+    </div>
+    <div id="panel-assets" class="panel">
+      <div class="search-box">
+        <div class="icon-search">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </div>
+        <input type="text" id="assetSearch" placeholder="Ask in plain language: e.g. 'enterprise security pitch' or 'roi calculator for CFO'" oninput="filterAssets()">
+      </div>
+      <div class="filter-row">
+        <span class="filter-label">Stage</span>
+        <button class="filter-chip active" data-filter="all" onclick="setFilter('stage','all')">All</button>
+        <button class="filter-chip" data-filter="awareness" onclick="setFilter('stage','awareness')">Awareness</button>
+        <button class="filter-chip" data-filter="consideration" onclick="setFilter('stage','consideration')">Consideration</button>
+        <button class="filter-chip" data-filter="decision" onclick="setFilter('stage','decision')">Decision</button>
+        <button class="filter-chip" data-filter="expansion" onclick="setFilter('stage','expansion')">Expansion</button>
+      </div>
+      <div class="filter-row">
+        <span class="filter-label">Audience</span>
+        <button class="filter-chip active" data-filter="all" onclick="setFilter('audience','all')">All</button>
+        <button class="filter-chip" data-filter="c-level" onclick="setFilter('audience','c-level')">C-Level</button>
+        <button class="filter-chip" data-filter="vp-director" onclick="setFilter('audience','vp-director')">VP / Director</button>
+        <button class="filter-chip" data-filter="practitioner" onclick="setFilter('audience','practitioner')">Practitioner</button>
+        <button class="filter-chip" data-filter="procurement" onclick="setFilter('audience','procurement')">Procurement</button>
+      </div>
+      <div class="results-count" id="resultsCount">Showing all assets</div>
+      <div class="asset-list" id="assetList"></div>
+    </div>
+    <div id="panel-glossary" class="panel" style="display:none;">
+      <div class="search-box">
+        <div class="icon-search">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </div>
+        <input type="text" id="glossarySearch" placeholder="Search terms, aliases, or definitions..." oninput="filterGlossary()">
+      </div>
+      <div class="glossary-layout">
+        <div class="glossary-nav" id="glossaryNav"></div>
+        <div class="glossary-content" id="glossaryContent"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const assets = [
+      { id: 1, title: "Enterprise Security Overview Deck", desc: "CISO-focused narrative covering threat landscape, compliance posture (SOC 2, ISO 27001), and competitive differentiation for enterprise security evaluations.", type: "deck", stage: "awareness", audience: "c-level", tags: ["Security","Compliance","Enterprise"], date: "Jul 2026", icon: "🛡️" },
+      { id: 2, title: "ROI Calculator — Cloud Migration", desc: "Interactive spreadsheet modeling TCO reduction, headcount savings, and 3-year NPV for finance and procurement stakeholders.", type: "sheet", stage: "consideration", audience: "c-level", tags: ["Finance","Cloud","ROI"], date: "Jun 2026", icon: "📊" },
+      { id: 3, title: "Technical Architecture Brief", desc: "Deep-dive into microservices topology, data residency, and API rate limits for engineering evaluators and solution architects.", type: "doc", stage: "consideration", audience: "practitioner", tags: ["Engineering","API","Architecture"], date: "Jul 2026", icon: "⚙️" },
+      { id: 4, title: "Customer Story — FinTech Scale-Up", desc: "Video testimonial and metrics walkthrough showing 40% faster release cycles and 99.99% uptime after migration.", type: "video", stage: "decision", audience: "vp-director", tags: ["Case Study","FinTech","Scale"], date: "May 2026", icon: "🎬" },
+      { id: 5, title: "Battlecard: vs. Competitor X", desc: "Side-by-side comparison on pricing, SLA guarantees, integration depth, and win themes for competitive deals.", type: "battle", stage: "decision", audience: "vp-director", tags: ["Competitive","Sales","Win Rate"], date: "Jul 2026", icon: "⚔️" },
+      { id: 6, title: "One-Pager: Platform Overview", desc: "Single-page leave-behind summarizing value pillars, key metrics, and next steps for first meetings.", type: "doc", stage: "awareness", audience: "c-level", tags: ["Overview","Leave-Behind","First Meeting"], date: "Jul 2026", icon: "📄" },
+      { id: 7, title: "Security Questionnaire Responses", desc: "Pre-filled responses to common vendor security questionnaires (SIG, VSA) to accelerate procurement cycles.", type: "doc", stage: "decision", audience: "procurement", tags: ["Security","Procurement","Compliance"], date: "Jun 2026", icon: "🔒" },
+      { id: 8, title: "Expansion Playbook: Add-On Modules", desc: "Guided conversation tracks for expanding existing accounts into advanced analytics and automation modules.", type: "doc", stage: "expansion", audience: "vp-director", tags: ["Expansion","Upsell","Account Growth"], date: "Jul 2026", icon: "📈" },
+      { id: 9, title: "Demo Script: Data Pipeline Builder", desc: "Step-by-step demo flow for practitioner audiences with live data, edge-case handling, and objection responses.", type: "doc", stage: "consideration", audience: "practitioner", tags: ["Demo","Data","Hands-On"], date: "Jun 2026", icon: "🧪" },
+      { id: 10, title: "Pricing & Packaging Guide", desc: "Internal guide to tier structures, discount guardrails, and negotiation strategies for sales reps and leadership.", type: "doc", stage: "decision", audience: "vp-director", tags: ["Pricing","Negotiation","Internal"], date: "Jul 2026", icon: "💰" },
+      { id: 11, title: "Compliance Roadmap Infographic", desc: "Visual timeline showing certification milestones, audit windows, and customer communication cadence.", type: "deck", stage: "awareness", audience: "c-level", tags: ["Compliance","Visual","Roadmap"], date: "May 2026", icon: "🗺️" },
+      { id: 12, title: "Integration Partner Ecosystem Map", desc: "Interactive map of 50+ pre-built integrations with use-case tags and setup complexity ratings.", type: "sheet", stage: "consideration", audience: "practitioner", tags: ["Integrations","Ecosystem","Setup"], date: "Jul 2026", icon: "🔗" }
+    ];
+
+    const glossary = {
+      "Product & Platform": [
+        { term: "Platform", def: "The core technology infrastructure that hosts all modules, APIs, and data services. Not to be confused with a single product feature.", aliases: ["Core Infrastructure", "Foundation Layer"], dept: "product", usage: "Use 'platform' when discussing long-term architecture decisions or multi-module deployments. Avoid using it to describe a single feature." },
+        { term: "Module", def: "A distinct functional unit within the platform that can be licensed independently. Modules combine to form a full solution.", aliases: ["Add-on", "Component", "Feature Pack"], dept: "product", usage: "Use 'module' in expansion conversations ('activate the Analytics module'). Avoid 'plugin' — it implies third-party or lightweight." },
+        { term: "API-First", def: "Design philosophy where every capability is exposed via API before a UI is built. Enables automation, integration, and custom workflows.", aliases: ["API-Native", "Headless"], dept: "technical", usage: "Use for practitioner and engineering audiences. Pair with concrete integration examples rather than abstract claims." },
+        { term: "Multi-Tenant", def: "Architecture where a single instance serves multiple customers (tenants) with strict data isolation between them.", aliases: ["SaaS Architecture", "Shared Instance"], dept: "technical", usage: "Use in security and procurement discussions to explain cost efficiency without compromising isolation." }
+      ],
+      "Sales & Commercial": [
+        { term: "Land & Expand", def: "Go-to-market motion where an initial narrow deployment ('land') is followed by broader adoption and additional modules ('expand').", aliases: ["Foot-in-the-Door", "Pilot-to-Production"], dept: "sales", usage: "Use in account planning and pipeline reviews. Always pair land metrics with expansion potential when forecasting." },
+        { term: "Champion", def: "An internal advocate within the prospect organization who actively promotes the solution, navigates politics, and facilitates next steps.", aliases: ["Internal Sponsor", "Mobilizer"], dept: "sales", usage: "Differentiate from 'economic buyer.' A champion drives process; a buyer approves budget. Both are needed." },
+        { term: "Economic Buyer", def: "The person with formal authority to approve budget and sign the contract. May not be the daily user or technical evaluator.", aliases: ["Budget Holder", "Decision Maker"], dept: "sales", usage: "Map explicitly in MEDDPICC. Do not assume the champion is the economic buyer." },
+        { term: "Value Realization", def: "The measurable point at which a customer achieves the outcomes promised during the sales cycle.", aliases: ["Time-to-Value", "Outcome Delivery"], dept: "sales", usage: "Use post-sale to align CS and Sales. In pre-sale, set realistic realization timelines to avoid churn." }
+      ],
+      "Marketing & Positioning": [
+        { term: "Category Creation", def: "The strategic effort to define and own a new market category rather than competing within an existing one.", aliases: ["New Category", "Blue Ocean"], dept: "strategy", usage: "Use in executive narratives and analyst briefings. Requires sustained investment in thought leadership and analyst relations." },
+        { term: "Positioning Statement", def: "A concise articulation of who the product is for, what it does, and why it is different. The internal anchor for all messaging.", aliases: ["Value Prop", "Positioning"], dept: "marketing", usage: "Use internally to align content, sales decks, and PR. Never paste directly into customer-facing copy." },
+        { term: "Thought Leadership", def: "Content and perspective that shapes industry conversation rather than directly promoting the product.", aliases: ["Executive POV", "Market Education"], dept: "marketing", usage: "Use for awareness-stage audiences and analyst engagement. Must be genuinely insightful — promotional thought leadership destroys credibility." },
+        { term: "Messaging Hierarchy", def: "Structured framework from company-level narrative down to feature-level proof points, ensuring consistency across channels.", aliases: ["Message Map", "Narrative Architecture"], dept: "marketing", usage: "Use during campaign planning and product launches. The hierarchy prevents 'message drift' between demand gen and sales enablement." }
+      ],
+      "Strategy & Metrics": [
+        { term: "TAM / SAM / SOM", def: "Market sizing framework: Total Addressable Market (all possible demand), Serviceable Addressable Market (reachable with current product), Serviceable Obtainable Market (realistic near-term capture).", aliases: ["Market Sizing", "Bottom-Up Sizing"], dept: "strategy", usage: "Use in board decks and annual planning. Be prepared to defend SOM assumptions with pipeline data and win rates." },
+        { term: "Win Rate", def: "The percentage of qualified opportunities that result in a closed-won deal. Calculated as Closed-Won / (Closed-Won + Closed-Lost).", aliases: ["Conversion Rate", "Close Rate"], dept: "sales", usage: "Use in pipeline reviews and competitive analysis. Segment by deal size, segment, and competitor for actionable insight." },
+        { term: "Net Revenue Retention (NRR)", def: "The percentage of recurring revenue retained from existing customers over a period, including expansions, contractions, and churn.", aliases: ["NRR", "Net Dollar Retention"], dept: "strategy", usage: "Use in investor and board contexts. NRR > 120% signals product-market fit and expansion health." },
+        { term: "Product-Market Fit (PMF)", def: "The degree to which a product satisfies strong market demand. Often signaled by retention, organic growth, and referenceability.", aliases: ["Market Traction", "Fit Signal"], dept: "product", usage: "Use in strategic discussions, not sales calls. PMF is an internal diagnosis, not a customer-facing claim." }
+      ]
+    };
+
+    let activeTab = 'assets', stageFilter = 'all', audienceFilter = 'all', activeCategory = Object.keys(glossary)[0];
+
+    function switchTab(tab) {
+      activeTab = tab;
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+      document.getElementById('panel-assets').style.display = tab === 'assets' ? 'block' : 'none';
+      document.getElementById('panel-glossary').style.display = tab === 'glossary' ? 'block' : 'none';
+      if (tab === 'glossary') renderGlossary();
+    }
+
+    function setFilter(type, value) {
+      if (type === 'stage') stageFilter = value;
+      if (type === 'audience') audienceFilter = value;
+      document.querySelectorAll('.filter-row').forEach(row => {
+        const label = row.querySelector('.filter-label');
+        if (!label) return;
+        const filterType = label.textContent.toLowerCase().trim();
+        row.querySelectorAll('.filter-chip').forEach(chip => {
+          const isActive = (filterType === 'stage' && chip.dataset.filter === stageFilter) ||
+                           (filterType === 'audience' && chip.dataset.filter === audienceFilter);
+          chip.classList.toggle('active', isActive);
+        });
+      });
+      filterAssets();
+    }
+
+    function filterAssets() {
+      const query = document.getElementById('assetSearch').value.toLowerCase().trim();
+      const list = document.getElementById('assetList');
+      const countEl = document.getElementById('resultsCount');
+      const filtered = assets.filter(a => {
+        const matchesStage = stageFilter === 'all' || a.stage === stageFilter;
+        const matchesAudience = audienceFilter === 'all' || a.audience === audienceFilter;
+        const matchesQuery = !query ||
+          a.title.toLowerCase().includes(query) ||
+          a.desc.toLowerCase().includes(query) ||
+          a.tags.some(t => t.toLowerCase().includes(query)) ||
+          a.stage.toLowerCase().includes(query) ||
+          a.audience.toLowerCase().includes(query) ||
+          a.type.toLowerCase().includes(query);
+        return matchesStage && matchesAudience && matchesQuery;
+      });
+      countEl.textContent = filtered.length === assets.length ? `Showing all ${assets.length} assets` : `Showing ${filtered.length} of ${assets.length} assets`;
+      if (filtered.length === 0) {
+        list.innerHTML = `<div class=\"empty-state\"><svg viewBox=\"0 0 24 24\"><path d=\"M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7\"/><path d=\"M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z\"/></svg><p>No assets match your filters.</p></div>`;
+        return;
+      }
+      list.innerHTML = filtered.map(a => `
+        <div class=\"asset-card\" onclick=\"openAsset(${a.id})\">\n          <div class=\"asset-icon ${a.type}\">${a.icon}</div>\n          <div class=\"asset-body\">\n            <h3 class=\"asset-title\">${a.title}</h3>\n            <p class=\"asset-desc\">${a.desc}</p>\n            <div class=\"asset-meta\">\n              <span class=\"asset-tag tag-stage\">${a.stage.charAt(0).toUpperCase() + a.stage.slice(1)}</span>\n              <span class=\"asset-tag tag-audience\">${a.audience.replace('-',' / ').replace(/\\b\\w/g, c => c.toUpperCase())}</span>\n              <span class=\"asset-tag tag-type\">${a.type.charAt(0).toUpperCase() + a.type.slice(1)}</span>\n              <span class=\"asset-tag tag-date\">${a.date}</span>\n            </div>\n          </div>\n          <button class=\"asset-action\">Open</button>\n        </div>
+      `).join('');
+    }
+
+    function openAsset(id) {
+      const a = assets.find(x => x.id === id);
+      if (a && window.sendPrompt) window.sendPrompt(`Open asset: ${a.title}`);
+    }
+
+    function renderGlossary() {
+      const nav = document.getElementById('glossaryNav');
+n      const content = document.getElementById('glossaryContent');\n      const query = (document.getElementById('glossarySearch')?.value || '').toLowerCase().trim();\n      nav.innerHTML = Object.keys(glossary).map(cat => {\n        const isActive = cat === activeCategory && !query;\n        return `<button class=\"glossary-nav-item ${isActive ? 'active' : ''}\" onclick=\"setCategory('${cat}')\">${cat}</button>`;\n      }).join('');\n      let terms = [];\n      if (query) {\n        Object.values(glossary).forEach(arr => {\n          arr.forEach(t => {\n            if (t.term.toLowerCase().includes(query) || t.def.toLowerCase().includes(query) || t.aliases.some(a => a.toLowerCase().includes(query))) terms.push(t);\n          });\n        });\n      } else {\n        terms = glossary[activeCategory] || [];\n      }\n      if (terms.length === 0) {\n        content.innerHTML = `<div class=\"empty-state\"><svg viewBox=\"0 0 24 24\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><line x1=\"21\" y1=\"21\" x2=\"16.65\" y2=\"16.65\"/></svg><p>No terms found.</p></div>`;\n        return;\n      }\n      content.innerHTML = terms.map(t => `\n        <div class=\"term-card\">\n          <div class=\"term-header\"><h3 class=\"term-name\">${t.term}</h3><span class=\"term-badge badge-${t.dept}\">${t.dept}</span></div>\n          <p class=\"term-def\">${t.def}</p>\n          <p class=\"term-aliases\"><strong>Also called:</strong> ${t.aliases.join(' · ')}</p>\n          <div class=\"term-usage\"><span class=\"term-usage-label\">Usage Guidance</span>${t.usage}</div>\n        </div>\n      `).join('');\n    }\n\n    function setCategory(cat) {\n      activeCategory = cat;\n      document.getElementById('glossarySearch').value = '';\n      renderGlossary();\n    }\n\n    function filterGlossary() { renderGlossary(); }\n\n    filterAssets();\n  </script>
+</body>
+</html>
