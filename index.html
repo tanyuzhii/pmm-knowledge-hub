@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PMM Knowledge Hub</title>
+  <style>
+    :root {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --text-primary: #1a1a1a;
+      --text-secondary: #555555;
+      --text-tertiary: #888888;
+      --text-quaternary: #aaaaaa;
+      --border: #e5e5e5;
+      --surface: #fafafa;
+      --blue: #2563eb;
+      --red: #dc2626;
+      --green: #16a34a;
+      --purple: #7c3aed;
+      --gray: #6b7280;
+      --orange: #ea580c;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --text-primary: #f5f5f5;
+        --text-secondary: #b0b0b0;
+        --text-tertiary: #808080;
+        --text-quaternary: #606060;
+        --border: #333333;
+        --surface: #1a1a1a;
+      }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--surface); color: var(--text-primary); font-family: inherit; }
+    button, input, select, textarea { font: inherit; }
+
+    /* LOGIN SCREEN */
+    #loginScreen {
+      position: fixed; inset: 0; z-index: 9999;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .login-box {
+      background: white; padding: 40px; border-radius: 16px;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+      width: 100%; max-width: 400px; text-align: center;
+    }
+    .login-box h1 { font-size: 24px; margin: 0 0 8px 0; color: #1a1a2e; }
+    .login-box p { font-size: 14px; color: var(--text-secondary); margin: 0 0 24px 0; }
+    .login-box input {
+      width: 100%; padding: 12px 16px; margin-bottom: 12px;
+      border: 1px solid var(--border); border-radius: 10px;
+      font-size: 15px; outline: none;
+    }
+    .login-box input:focus { border-color: var(--blue); }
+    .login-box button {
+      width: 100%; padding: 12px; background: var(--blue); color: white;
+      border: none; border-radius: 10px; font-size: 15px; font-weight: 600;
+      cursor: pointer; transition: opacity 0.15s;
+    }
+    .login-box button:hover { opacity: 0.9; }
+    .login-error { color: var(--red); font-size: 13px; margin-top: 8px; display: none; }
+
+    /* MAIN APP */
+    #app { display: none; }
+    .hub-wrapper { max-width: 1100px; margin: 0 auto; padding: 20px 16px; }
+    .hub-header { text-align: center; margin-bottom: 24px; }
+    .hub-header h1 { font-size: 22px; font-weight: 700; margin: 0 0 4px 0; }
+    .hub-header p { font-size: 13px; color: var(--text-secondary); margin: 0; }
+
+    /* TOP BAR */
+    .top-bar {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 20px; flex-wrap: wrap; gap: 10px;
+    }
+    .tab-bar { display: flex; gap: 4px; }
+    .tab-btn {
+      padding: 8px 16px; font-size: 13px; font-weight: 600;
+      color: var(--text-tertiary); background: none; border: none;
+      border-bottom: 2px solid transparent; cursor: pointer;
+    }
+    .tab-btn:hover { color: var(--text-primary); }
+    .tab-btn.active { color: var(--text-primary); border-bottom-color: var(--text-primary); }
+    .top-actions { display: flex; gap: 8px; align-items: center; }
+    .btn {
+      padding: 6px 14px; font-size: 12px; font-weight: 600;
+      border-radius: 8px; border: 1px solid var(--border);
+      background: none; cursor: pointer; color: var(--text-secondary);
+      transition: all 0.15s;
+    }
+    .btn:hover { border-color: var(--text-primary); color: var(--text-primary); }
+    .btn-primary { background: var(--text-primary); color: white; border-color: var(--text-primary); }
+    .btn-primary:hover { opacity: 0.9; }
+    .user-pill {
+      font-size: 12px; padding: 4px 12px; background: rgba(37,99,235,0.1);
+      color: var(--blue); border-radius: 20px; font-weight: 600;
+    }
+
+    /* SEARCH */
+    .search-box { position: relative; margin-bottom: 16px; }
+    .search-box input {
+      width: 100%; padding: 12px 14px 12px 42px;
+      font-size: 14px; border: 1px solid var(--border); border-radius: 10px;
+      background: var(--surface); color: var(--text-primary); outline: none;
+    }
+    .search-box input:focus { border-color: var(--blue); }
+    .search-icon {
+      position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+      width: 18px; height: 18px; opacity: 0.4;
+    }
+
+    /* FILTERS */
+    .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
+    .filter-chip {
+      padding: 5px 12px; font-size: 12px; font-weight: 500;
+      border-radius: 6px; border: 1px solid var(--border);
+      background: transparent; color: var(--text-secondary); cursor: pointer;
+    }
+    .filter-chip:hover { border-color: var(--text-primary); color: var(--text-primary); }
+    .filter-chip.active { background: var(--text-primary); color: white; border-color: var(--text-primary); }
+    .filter-label { font-size: 11px; color: var(--text-quaternary); text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* STATS */
+    .stats-bar {
+      display: flex; gap: 16px; margin-bottom: 16px;
+      font-size: 12px; color: var(--text-quaternary);
+    }
+    .stats-bar span { color: var(--text-secondary); font-weight: 600; }
+
+    /* ASSET CARDS */
+    .asset-list { display: flex; flex-direction: column; gap: 10px; }
+    .asset-card {
+      display: flex; align-items: flex-start; gap: 14px;
+      padding: 16px; border: 1px solid var(--border); border-radius: 12px;
+      background: var(--surface); transition: all 0.15s ease;
+    }
+    .asset-card:hover { border-color: var(--blue); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+    .asset-icon {
+      width: 44px; height: 44px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; font-size: 20px;
+    }
+    .icon-ppt { background: rgba(234,88,12,0.12); }
+    .icon-pdf { background: rgba(220,38,38,0.12); }
+    .icon-doc { background: rgba(37,99,235,0.12); }
+    .icon-sheet { background: rgba(22,163,74,0.12); }
+    .icon-video { background: rgba(124,58,237,0.12); }
+    .asset-body { flex: 1; min-width: 0; }
+    .asset-title { font-size: 15px; font-weight: 600; margin: 0 0 4px 0; }
+    .asset-desc { font-size: 13px; color: var(--text-secondary); margin: 0 0 10px 0; line-height: 1.5; }
+    .asset-meta { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .tag {
+      font-size: 11px; padding: 3px 10px; border-radius: 4px; font-weight: 500;
+    }
+    .tag-product { background: rgba(37,99,235,0.1); color: var(--blue); }
+    .tag-type { background: rgba(107,114,128,0.1); color: var(--gray); }
+    .tag-audience { background: rgba(124,58,237,0.1); color: var(--purple); }
+    .tag-date { background: none; color: var(--text-quaternary); padding: 3px 0; }
+    .asset-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .asset-actions a, .asset-actions button {
+      padding: 6px 14px; font-size: 12px; font-weight: 600;
+      border-radius: 8px; border: 1px solid var(--border);
+      background: none; cursor: pointer; color: var(--text-secondary);
+      text-decoration: none; display: inline-flex; align-items: center; gap: 4px;
+    }
+    .asset-actions a:hover, .asset-actions button:hover {
+      background: var(--text-primary); color: white; border-color: var(--text-primary);
+    }
+
+    /* GLOSSARY */
+    .glossary-layout { display: grid; grid-template-columns: 220px 1fr; gap: 24px; }
+    .glossary-nav { display: flex; flex-direction: column; gap: 2px; }
+    .glossary-nav-item {
+      padding: 10px 14px; font-size: 13px; font-weight: 500;
+      color: var(--text-secondary); border-radius: 10px; cursor: pointer;
+      border: none; background: none; text-align: left; transition: all 0.12s;
+    }
+    .glossary-nav-item:hover { background: var(--surface); color: var(--text-primary); }
+    .glossary-nav-item.active { background: var(--text-primary); color: white; }
+    .glossary-content { border-left: 1px solid var(--border); padding-left: 24px; }
+    .term-card { padding: 18px 0; border-bottom: 1px solid var(--border); }
+    .term-card:last-child { border-bottom: none; }
+    .term-header { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; flex-wrap: wrap; }
+    .term-name { font-size: 16px; font-weight: 700; margin: 0; }
+    .term-badge { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 3px 10px; border-radius: 4px; }
+    .badge-product { background: rgba(37,99,235,0.12); color: var(--blue); }
+    .badge-marketing { background: rgba(124,58,237,0.12); color: var(--purple); }
+    .badge-sales { background: rgba(22,163,74,0.12); color: var(--green); }
+    .badge-technical { background: rgba(107,114,128,0.12); color: var(--gray); }
+    .badge-strategy { background: rgba(234,88,12,0.12); color: var(--orange); }
+    .term-def { font-size: 14px; color: var(--text-secondary); line-height: 1.6; margin: 0 0 10px 0; }
+    .term-aliases { font-size: 12px; color: var(--text-quaternary); margin: 0; }
+    .term-aliases strong { color: var(--text-secondary); }
+    .term-usage { margin-top: 12px; padding: 12px 14px; background: var(--surface); border-radius: 8px; font-size: 13px; color: var(--text-secondary); line-height: 1.5; border-left: 3px solid var(--text-quaternary); }
+    .term-usage-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-quaternary); margin-bottom: 4px; display: block; }
+
+    /* ADMIN PANEL */
+    .admin-panel {
+      background: white; border: 1px solid var(--border); border-radius: 12px;
+      padding: 24px; margin-bottom: 20px;
+    }
+    .admin-panel h3 { margin: 0 0 16px 0; font-size: 16px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+    .form-row.full { grid-template-columns: 1fr; }
+    .form-row label { display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; }
+    .form-row input, .form-row select, .form-row textarea {
+      width: 100%; padding: 10px 12px; border: 1px solid var(--border);
+      border-radius: 8px; font-size: 13px; outline: none;
+    }
+    .form-row input:focus, .form-row select:focus, .form-row textarea:focus { border-color: var(--blue); }
+    .form-row textarea { min-height: 60px; resize: vertical; }
+    .admin-actions { display: flex; gap: 8px; margin-top: 16px; }
+
+    /* TABLE */
+    .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .data-table th { text-align: left; padding: 10px 12px; border-bottom: 2px solid var(--border); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-quaternary); }
+    .data-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+    .data-table tr:hover td { background: var(--surface); }
+    .data-table .actions { display: flex; gap: 4px; }
+    .data-table .actions button { padding: 4px 10px; font-size: 11px; border-radius: 6px; border: 1px solid var(--border); background: none; cursor: pointer; }
+    .data-table .actions button:hover { background: var(--text-primary); color: white; }
+
+    /* EMPTY STATE */
+    .empty-state { text-align: center; padding: 60px 20px; color: var(--text-quaternary); }
+    .empty-state svg { width: 48px; height: 48px; margin-bottom: 12px; stroke: currentColor; fill: none; stroke-width: 1.5; }
+    .empty-state p { font-size: 14px; margin: 0; }
+
+    /* MODAL */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 1000;
+      background: rgba(0,0,0,0.5); display: none;
+      align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal-box {
+      background: white; border-radius: 16px; width: 100%; max-width: 600px;
+      max-height: 90vh; overflow-y: auto; padding: 24px;
+    }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .modal-header h3 { margin: 0; font-size: 18px; }
+    .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-tertiary); }
+
+    @media (max-width: 768px) {
+      .glossary-layout { grid-template-columns: 1fr; }
+      .glossary-content { border-left: none; padding-left: 0; border-top: 1px solid var(--border); padding-top: 16px; }
+      .form-row { grid-template-columns: 1fr; }
+      .asset-card { flex-direction: column; }
+      .asset-actions { width: 100%; justify-content: flex-end; }
+    }
+  </style>
+</head>
+<body>
+  <!-- LOGIN SCREEN -->
+  <div id="loginScreen">
+    <div class="login-box">
+      <h1>🔐 PMM Knowledge Hub</h1>
+      <p>Internal access only. Please sign in.</p>
+      <input type="text" id="loginUser" placeholder="Username" value="">
+      <input type="password" id="loginPass" placeholder="Password" value="">
+      <button onclick="doLogin()">Sign In</button>
+      <div class="login-error" id="loginError">Invalid username or password</div>
+      <p style="font-size: 11px; color: var(--text-quaternary); margin-top: 16px;">
+        Default: admin / pmmhub2026
+      </p>
+    </div>
+  </div>
+
+  <!-- MAIN APP -->
+  <div id="app">
+    <div class="hub-wrapper">
+      <div class="hub-header">
+        <h1>PMM Knowledge Hub</h1>
+        <p>Assets & aligned terminology for commercial teams</p>
+      </div>
+
+      <div class="top-bar">
+        <div class="tab-bar">
+          <button class="tab-btn active" data-tab="assets" onclick="switchTab('assets')">📁 Asset Library</button>
+          <button class="tab-btn" data-tab="glossary" onclick="switchTab('glossary')">📖 Glossary</button>
+          <button class="tab-btn" data-tab="admin" onclick="switchTab('admin')">⚙️ Admin</button>
+        </div>
+        <div class="top-actions">
+          <span class="user-pill" id="userPill">Admin</span>
+          <button class="btn" onclick="exportData()">⬇️ Export</button>
+          <button class="btn" onclick="doLogout()">Logout</button>
+        </div>
+      </div>
+
+      <!-- ASSET LIBRARY -->
+      <div id="panel-assets" class="panel">
+        <div class="search-box">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="assetSearch" placeholder="Search by name, product, type, or audience... e.g. 'AdvanGuard PDF' or 'KYB deck'" oninput="filterAssets()">
+        </div>
+
+        <div class="filters">
+          <span class="filter-label">Product</span>
+          <button class="filter-chip active" onclick="setProductFilter('all')">All</button>
+          <button class="filter-chip" onclick="setProductFilter('AAI')">AAI</button>
+          <button class="filter-chip" onclick="setProductFilter('CBI')">CBI</button>
+          <button class="filter-chip" onclick="setProductFilter('CBP')">CBP</button>
+          <button class="filter-chip" onclick="setProductFilter('BPS')">BPS</button>
+          <button class="filter-chip" onclick="setProductFilter('Other')">Other</button>
+        </div>
+
+        <div class="filters">
+          <span class="filter-label">Type</span>
+          <button class="filter-chip active" onclick="setTypeFilter('all')">All</button>
+          <button class="filter-chip" onclick="setTypeFilter('pptx')">PowerPoint</button>
+          <button class="filter-chip" onclick="setTypeFilter('pdf')">PDF</button>
+          <button class="filter-chip" onclick="setTypeFilter('docx')">Word</button>
+        </div>
+
+        <div class="stats-bar">
+          <div>Showing <span id="assetCount">0</span> assets</div>
+          <div>Last updated: <span id="lastUpdated">Jul 20, 2026</span></div>
+        </div>
+
+        <div class="asset-list" id="assetList"></div>
+      </div>
+
+      <!-- GLOSSARY -->
+      <div id="panel-glossary" class="panel" style="display:none;">
+        <div class="search-box">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="glossarySearch" placeholder="Search terms, aliases, or definitions..." oninput="filterGlossary()">
+        </div>
+        <div class="glossary-layout">
+          <div class="glossary-nav" id="glossaryNav"></div>
+          <div class="glossary-content" id="glossaryContent"></div>
+        </div>
+      </div>
+
+      <!-- ADMIN -->
+      <div id="panel-admin" class="panel" style="display:none;">
+        <div class="admin-panel">
+          <h3>➕ Add New Asset</h3>
+          <div class="form-row">
+            <div>
+              <label>Asset Name</label>
+              <input type="text" id="newTitle" placeholder="e.g. AdvanGuard KYB Sales Pitch Deck">
+            </div>
+            <div>
+              <label>Product Line</label>
+              <select id="newProduct">
+                <option value="AAI">AAI</option>
+                <option value="CBI">CBI</option>
+                <option value="CBP">CBP</option>
+                <option value="BPS">BPS</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div>
+              <label>File Type</label>
+              <select id="newType">
+                <option value="pptx">PowerPoint (.pptx)</option>
+                <option value="pdf">PDF</option>
+                <option value="docx">Word (.docx)</option>
+                <option value="xlsx">Excel (.xlsx)</option>
+                <option value="video">Video</option>
+              </select>
+            </div>
+            <div>
+              <label>Audience</label>
+              <select id="newAudience">
+                <option value="Sales">Sales</option>
+                <option value="Marketing">Marketing</option>
+                <option value="Product">Product</option>
+                <option value="All">All Teams</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row full">
+            <label>SharePoint Link</label>
+            <input type="url" id="newLink" placeholder="Paste SharePoint shareable link here">
+          </div>
+          <div class="form-row full">
+            <label>Description (optional)</label>
+            <textarea id="newDesc" placeholder="Brief description of what this asset contains..."></textarea>
+          </div>
+          <div class="admin-actions">
+            <button class="btn btn-primary" onclick="addAsset()">Add Asset</button>
+            <button class="btn" onclick="clearForm()">Clear</button>
+          </div>
+        </div>
+
+        <h3 style="margin-bottom: 12px;">📋 All Assets</h3>
+        <div style="overflow-x: auto;">
+          <table class="data-table" id="adminTable">
+            <thead>
+              <tr><th>Name</th><th>Product</th><th>Type</th><th>Audience</th><th>Actions</th></tr>
+            </thead>
+            <tbody id="adminTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDIT MODAL -->
+  <div class="modal-overlay" id="editModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>✏️ Edit Asset</h3>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="form-row">
+        <div>
+          <label>Asset Name</label>
+          <input type="text" id="editTitle">
+        </div>
+        <div>
+          <label>Product Line</label>
+          <select id="editProduct">
+            <option value="AAI">AAI</option>
+            <option value="CBI">CBI</option>
+            <option value="CBP">CBP</option>
+            <option value="BPS">BPS</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div>
+          <label>File Type</label>
+          <select id="editType">
+            <option value="pptx">PowerPoint</option>
+            <option value="pdf">PDF</option>
+            <option value="docx">Word</option>
+            <option value="xlsx">Excel</option>
+            <option value="video">Video</option>
+          </select>
+        </div>
+        <div>
+          <label>Audience</label>
+          <select id="editAudience">
+            <option value="Sales">Sales</option>
+            <option value="Marketing">Marketing</option>
+            <option value="Product">Product</option>
+            <option value="All">All Teams</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row full">
+        <label>SharePoint Link</label>
+        <input type="url" id="editLink">
+      </div>
+      <div class="form-row full">
+        <label>Description</label>
+        <textarea id="editDesc"></textarea>
+      </div>
+      <div class="admin-actions">
+        <button class="btn btn-primary" onclick="saveEdit()">Save Changes</button>
+        <button class="btn" onclick="closeModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== AUTH =====
+    const AUTH_KEY = 'pmm_hub_auth';
+    const DEFAULT_USER = 'admin';
+    const DEFAULT_PASS = 'pmmhub2026';
+
+    function checkAuth() {
+      const auth = localStorage.getItem(AUTH_KEY);
+      if (auth === 'true') {
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('app').style.display = 'block';
+        initApp();
+      }
+    }
+
+    function doLogin() {
+      const u = document.getElementById('loginUser').value.trim();
+      const p = document.getElementById('loginPass').value;
+      if (u === DEFAULT_USER && p === DEFAULT_PASS) {
+        localStorage.setItem(AUTH_KEY, 'true');
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('app').style.display = 'block';
+        initApp();
+      } else {
+        document.getElementById('loginError').style.display = 'block';
+      }
+    }
+
+    function doLogout() {
+      localStorage.removeItem(AUTH_KEY);
+      location.reload();
+    }
+
+    // Allow Enter key to login
+    document.getElementById('loginPass').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') doLogin();
+    });
+
+    // ===== DATA =====
+    // Pre-loaded with sample data matching your Lark sheet structure
+    let assets = JSON.parse(localStorage.getItem('pmm_assets')) || [
+      { id: 1, title: "AdvanGuard Identity Verification Product Deck", product: "AAI", type: "pdf", audience: "Sales", link: "", desc: "Identity verification product overview for sales conversations", date: "Mar 2025" },
+      { id: 2, title: "AdvanGuard Identity Verification Product Deck", product: "AAI", type: "pptx", audience: "Sales", link: "", desc: "Identity verification product overview for sales conversations", date: "Mar 2025" },
+      { id: 3, title: "AdvanGuard Document Verification Product Deck", product: "AAI", type: "pdf", audience: "Sales", link: "", desc: "Document verification capabilities and use cases", date: "Aug 2025" },
+      { id: 4, title: "AdvanGuard Document Verification Product Deck", product: "AAI", type: "pptx", audience: "Sales", link: "", desc: "Document verification capabilities and use cases", date: "Aug 2025" },
+      { id: 5, title: "AdvanGuard Face Authentication Product Deck", product: "AAI", type: "pdf", audience: "Sales", link: "", desc: "Face authentication technology and implementation guide", date: "Aug 2025" },
+      { id: 6, title: "AdvanGuard Face Authentication Product Deck", product: "AAI", type: "pptx", audience: "Sales", link: "", desc: "Face authentication technology and implementation guide", date: "Aug 2025" },
+      { id: 7, title: "AdvanGuard Identity Verification for Crypto", product: "AAI", type: "pptx", audience: "Sales", link: "", desc: "Crypto-specific identity verification positioning", date: "Oct 2025" },
+      { id: 8, title: "AdvanGuard Identity Verification for Crypto", product: "AAI", type: "pdf", audience: "Sales", link: "", desc: "Crypto-specific identity verification positioning", date: "Oct 2025" },
+      { id: 9, title: "AdvanGuard Anti-Money Laundering (AML) Product Deck", product: "AAI", type: "pptx", audience: "Sales", link: "", desc: "AML compliance and screening solutions", date: "Nov 2025" },
+      { id: 10, title: "AdvanGuard Anti-Money Laundering (AML) Product Deck", product: "AAI", type: "pdf", audience: "Sales", link: "", desc: "AML compliance and screening solutions", date: "Nov 2025" },
+      { id: 11, title: "ADVANCE.AI Data Solutions Sales Pitch Deck", product: "AAI", type: "pptx", audience: "Sales", link: "", desc: "Data solutions portfolio overview", date: "May 2026" },
+      { id: 12, title: "ADVANCE.AI Data Solutions Sales Pitch Deck", product: "AAI", type: "pdf", audience: "Sales", link: "", desc: "Data solutions portfolio overview", date: "May 2026" },
+      { id: 13, title: "AdvanGuard User Guide", product: "AAI", type: "pdf", audience: "All", link: "", desc: "Complete user guide for AdvanGuard platform", date: "2025" },
+      { id: 14, title: "AdvanGuard Know Your Business (KYB) Sales Pitch Deck", product: "AAI", type: "pptx", audience: "Sales", link: "", desc: "KYB solution for business verification", date: "Mar 2026" },
+      { id: 15, title: "AdvanGuard Know Your Business (KYB) Sales Pitch Deck", product: "AAI", type: "pdf", audience: "Sales", link: "", desc: "KYB solution for business verification", date: "Mar 2026" },
+      { id: 16, title: "AdvanGuard Proof of Address (PoA) Sales Pitch Deck", product: "AAI", type: "pptx", audience: "Sales", link: "", desc: "Proof of address verification solution", date: "Mar 2026" },
+      { id: 17, title: "Product Deck - Telco Score", product: "CBI", type: "pptx", audience: "Sales", link: "", desc: "Telecommunications credit scoring solution", date: "May 2025" },
+      { id: 18, title: "CBI Sales Pitch Deck", product: "CBI", type: "pptx", audience: "Sales", link: "", desc: "CBI core sales presentation", date: "Apr 2026" },
+      { id: 19, title: "BNI CBI Next Gen Credit Score", product: "CBI", type: "pptx", audience: "Sales", link: "", desc: "Next generation credit scoring with BNI partnership", date: "May 2025" },
+      { id: 20, title: "Bureau Inquiry Report Product Deck", product: "CBI", type: "pptx", audience: "Sales", link: "", desc: "Bureau inquiry reporting capabilities", date: "Jul 2025" },
+      { id: 21, title: "CBI Polaris Product Deck", product: "CBI", type: "pdf", audience: "Sales", link: "", desc: "Polaris product line overview", date: "Sep 2025" },
+      { id: 22, title: "Portfolio Alerts Sales Pitch Deck", product: "CBI", type: "pptx", audience: "Sales", link: "", desc: "Portfolio monitoring and alerts solution", date: "May 2026" },
+      { id: 23, title: "Portfolio Alerts Sales Pitch Deck", product: "CBI", type: "pdf", audience: "Sales", link: "", desc: "Portfolio monitoring and alerts solution", date: "May 2026" },
+      { id: 24, title: "SmartConnect Product Deck", product: "CBI", type: "pptx", audience: "Sales", link: "", desc: "SmartConnect integration platform overview", date: "Jul 2025" },
+      { id: 25, title: "SmartConnect Product Deck", product: "CBI", type: "pdf", audience: "Sales", link: "", desc: "SmartConnect integration platform overview", date: "Jul 2025" },
+      { id: 26, title: "Portfolio Alerts Product Deck", product: "CBI", type: "pptx", audience: "Sales", link: "", desc: "Portfolio alerts technical deep-dive", date: "May 2026" },
+      { id: 27, title: "CBI Polaris Product Deck", product: "CBI", type: "pdf", audience: "Sales", link: "", desc: "Polaris product line overview (updated)", date: "Sep 2025" },
+      { id: 28, title: "CBI-Bureau Telco Score Sales Pitch Deck", product: "CBI", type: "pptx", audience: "Sales", link: "", desc: "Telco score bureau integration pitch", date: "Mar 2026" },
+      { id: 29, title: "CBI-Bureau Telco Score Sales Pitch Deck", product: "CBI", type: "pdf", audience: "Sales", link: "", desc: "Telco score bureau integration pitch", date: "Mar 2026" },
+      { id: 30, title: "Skip Tracing Sales Pitch Deck", product: "CBI", type: "pptx", audience: "Sales", link: "", desc: "Skip tracing and location intelligence", date: "Jun 2026" },
+      { id: 31, title: "Skip Tracing Sales Pitch Deck", product: "CBI", type: "pdf", audience: "Sales", link: "", desc: "Skip tracing and location intelligence", date: "Jun 2026" },
+      { id: 32, title: "Enhanced Bureau Alternative Score", product: "CBI", type: "pptx", audience: "Sales", link: "", desc: "Alternative credit scoring methodology", date: "Jun 2026" },
+      { id: 33, title: "Customised Score PH Sales Pitch Deck", product: "CBP", type: "pdf", audience: "Sales", link: "", desc: "Philippines customized credit scoring", date: "Dec 2025" },
+    ];
+
+    const glossary = {
+      "Product & Platform": [
+        { term: "AAI (AdvanGuard AI)", def: "Identity verification and fraud prevention platform covering KYC, KYB, AML, document verification, and face authentication.", aliases: ["AdvanGuard", "Identity Suite"], dept: "product", usage: "Use 'AAI' in internal discussions. Use 'AdvanGuard' in customer-facing materials for brand consistency." },
+        { term: "CBI (Credit Bureau Intelligence)", def: "Credit scoring and bureau data platform providing credit scores, portfolio alerts, and alternative scoring models.", aliases: ["Credit Bureau", "Polaris"], dept: "product", usage: "Use 'CBI' internally. 'Polaris' refers specifically to the scoring engine product line." },
+        { term: "CBP (Credit Bureau Philippines)", def: "Philippines-specific credit bureau operations and customized scoring solutions.", aliases: ["PH Bureau"], dept: "product", usage: "Use 'CBP' for Philippines market discussions. Distinguish from CBI for other markets." },
+        { term: "BPS (Business Process Solutions)", def: "Operational and process automation solutions supporting credit and identity workflows.", aliases: ["Process Automation"], dept: "product", usage: "Use 'BPS' when discussing workflow automation and operational efficiency gains." },
+        { term: "KYC (Know Your Customer)", def: "Process of verifying the identity of customers to comply with AML regulations and prevent fraud.", aliases: ["Customer Verification", "Identity Check"], dept: "technical", usage: "Use 'KYC' with compliance and risk audiences. Use 'identity verification' with general business stakeholders." },
+        { term: "KYB (Know Your Business)", def: "Verification of business entities including beneficial ownership, registration status, and operational legitimacy.", aliases: ["Business Verification", "UBO Check"], dept: "technical", usage: "Use 'KYB' in B2B sales contexts. Always explain UBO (Ultimate Beneficial Owner) on first mention." },
+        { term: "AML (Anti-Money Laundering)", def: "Regulatory framework and technology solutions to detect, prevent, and report money laundering activities.", aliases: ["Compliance Screening", "Sanctions Check"], dept: "technical", usage: "Use 'AML' with compliance officers and banks. Pair with specific regulation names (e.g., MAS, BSP) for relevance." },
+        { term: "API-First", def: "Design philosophy where every capability is exposed via API before a UI is built. Enables automation, integration, and custom workflows.", aliases: ["API-Native", "Headless"], dept: "technical", usage: "Use for practitioner and engineering audiences. Pair with concrete integration examples rather than abstract claims." }
+      ],
+      "Sales & Commercial": [
+        { term: "Land & Expand", def: "Go-to-market motion where an initial narrow deployment ('land') is followed by broader adoption and additional modules ('expand').", aliases: ["Foot-in-the-Door", "Pilot-to-Production"], dept: "sales", usage: "Use in account planning and pipeline reviews. Always pair land metrics with expansion potential when forecasting." },
+        { term: "Champion", def: "An internal advocate within the prospect organization who actively promotes the solution, navigates politics, and facilitates next steps.", aliases: ["Internal Sponsor", "Mobilizer"], dept: "sales", usage: "Differentiate from 'economic buyer.' A champion drives process; a buyer approves budget. Both are needed." },
+        { term: "Economic Buyer", def: "The person with formal authority to approve budget and sign the contract. May not be the daily user or technical evaluator.", aliases: ["Budget Holder", "Decision Maker"], dept: "sales", usage: "Map explicitly in MEDDPICC. Do not assume the champion is the economic buyer." },
+        { term: "Value Realization", def: "The measurable point at which a customer achieves the outcomes promised during the sales cycle.", aliases: ["Time-to-Value", "Outcome Delivery"], dept: "sales", usage: "Use post-sale to align CS and Sales. In pre-sale, set realistic realization timelines to avoid churn." },
+        { term: "Skip Tracing", def: "Process of locating individuals or businesses that have become unreachable, typically for debt recovery or legal purposes.", aliases: ["Location Intelligence", "Trace"], dept: "sales", usage: "Use 'skip tracing' with collections and lending clients. Use 'location intelligence' for broader positioning." }
+      ],
+      "Marketing & Positioning": [
+        { term: "Category Creation", def: "The strategic effort to define and own a new market category rather than competing within an existing one.", aliases: ["New Category", "Blue Ocean"], dept: "strategy", usage: "Use in executive narratives and analyst briefings. Requires sustained investment in thought leadership and analyst relations." },
+        { term: "Positioning Statement", def: "A concise articulation of who the product is for, what it does, and why it is different. The internal anchor for all messaging.", aliases: ["Value Prop", "Positioning"], dept: "marketing", usage: "Use internally to align content, sales decks, and PR. Never paste directly into customer-facing copy." },
+        { term: "Thought Leadership", def: "Content and perspective that shapes industry conversation rather than directly promoting the product.", aliases: ["Executive POV", "Market Education"], dept: "marketing", usage: "Use for awareness-stage audiences and analyst engagement. Must be genuinely insightful — promotional thought leadership destroys credibility." },
+        { term: "Messaging Hierarchy", def: "Structured framework from company-level narrative down to feature-level proof points, ensuring consistency across channels.", aliases: ["Message Map", "Narrative Architecture"], dept: "marketing", usage: "Use during campaign planning and product launches. The hierarchy prevents 'message drift' between demand gen and sales enablement." }
+      ],
+      "Strategy & Metrics": [
+        { term: "TAM / SAM / SOM", def: "Market sizing framework: Total Addressable Market (all possible demand), Serviceable Addressable Market (reachable with current product), Serviceable Obtainable Market (realistic near-term capture).", aliases: ["Market Sizing", "Bottom-Up Sizing"], dept: "strategy", usage: "Use in board decks and annual planning. Be prepared to defend SOM assumptions with pipeline data and win rates." },
+        { term: "Win Rate", def: "The percentage of qualified opportunities that result in a closed-won deal. Calculated as Closed-Won / (Closed-Won + Closed-Lost).", aliases: ["Conversion Rate", "Close Rate"], dept: "sales", usage: "Use in pipeline reviews and competitive analysis. Segment by deal size, segment, and competitor for actionable insight." },
+        { term: "Net Revenue Retention (NRR)", def: "The percentage of recurring revenue retained from existing customers over a period, including expansions, contractions, and churn.", aliases: ["NRR", "Net Dollar Retention"], dept: "strategy", usage: "Use in investor and board contexts. NRR > 120% signals product-market fit and expansion health." },
+        { term: "Product-Market Fit (PMF)", def: "The degree to which a product satisfies strong market demand. Often signaled by retention, organic growth, and referenceability.", aliases: ["Market Traction", "Fit Signal"], dept: "product", usage: "Use in strategic discussions, not sales calls. PMF is an internal diagnosis, not a customer-facing claim." }
+      ]
+    };
+
+    // ===== STATE =====
+    let activeTab = 'assets';
+    let productFilter = 'all';
+    let typeFilter = 'all';
+    let activeCategory = Object.keys(glossary)[0];
+    let editingId = null;
+
+    // ===== INIT =====
+    function initApp() {
+      filterAssets();
+      renderGlossary();
+      renderAdminTable();
+    }
+
+    // ===== TABS =====
+    function switchTab(tab) {
+      activeTab = tab;
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+      document.querySelectorAll('.panel').forEach(p => p.style.display = 'none');
+      document.getElementById('panel-' + tab).style.display = 'block';
+      if (tab === 'glossary') renderGlossary();
+      if (tab === 'admin') renderAdminTable();
+    }
+
+    // ===== ASSET FILTERS =====
+    function setProductFilter(val) {
+      productFilter = val;
+      updateFilterChips();
+      filterAssets();
+    }
+
+    function setTypeFilter(val) {
+      typeFilter = val;
+      updateFilterChips();
+      filterAssets();
+    }
+
+    function updateFilterChips() {
+      document.querySelectorAll('.filters').forEach(row => {
+        const label = row.querySelector('.filter-label');
+        if (!label) return;
+        const filterType = label.textContent.trim();
+        row.querySelectorAll('.filter-chip').forEach(chip => {
+          const text = chip.textContent.trim();
+          let isActive = false;
+          if (filterType === 'Product') {
+            isActive = (productFilter === 'all' && text === 'All') ||
+                       (productFilter === 'AAI' && text === 'AAI') ||
+                       (productFilter === 'CBI' && text === 'CBI') ||
+                       (productFilter === 'CBP' && text === 'CBP') ||
+                       (productFilter === 'BPS' && text === 'BPS') ||
+                       (productFilter === 'Other' && text === 'Other');
+          } else if (filterType === 'Type') {
+            isActive = (typeFilter === 'all' && text === 'All') ||
+                       (typeFilter === 'pptx' && text === 'PowerPoint') ||
+                       (typeFilter === 'pdf' && text === 'PDF') ||
+                       (typeFilter === 'docx' && text === 'Word');
+          }
+          chip.classList.toggle('active', isActive);
+        });
+      });
+    }
+
+    function getIcon(type) {
+      const map = { pptx: '📊', pdf: '📄', docx: '📝', xlsx: '📈', video: '🎬' };
+      return map[type] || '📎';
+    }
+
+    function getIconClass(type) {
+      const map = { pptx: 'icon-ppt', pdf: 'icon-pdf', docx: 'icon-doc', xlsx: 'icon-sheet', video: 'icon-video' };
+      return map[type] || 'icon-doc';
+    }
+
+    function filterAssets() {
+      const query = document.getElementById('assetSearch').value.toLowerCase().trim();
+      const list = document.getElementById('assetList');
+      const countEl = document.getElementById('assetCount');
+
+      const filtered = assets.filter(a => {
+        const matchesProduct = productFilter === 'all' || a.product === productFilter;
+        const matchesType = typeFilter === 'all' || a.type === typeFilter;
+        const q = query;
+        const matchesQuery = !q ||
+          a.title.toLowerCase().includes(q) ||
+          (a.desc && a.desc.toLowerCase().includes(q)) ||
+          a.product.toLowerCase().includes(q) ||
+          a.type.toLowerCase().includes(q) ||
+          a.audience.toLowerCase().includes(q);
+        return matchesProduct && matchesType && matchesQuery;
+      });
+
+      countEl.textContent = filtered.length;
+
+      if (filtered.length === 0) {
+        list.innerHTML = `<div class="empty-state"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg><p>No assets match your search.</p></div>`;
+        return;
+      }
+
+      list.innerHTML = filtered.map(a => `
+        <div class="asset-card">
+          <div class="asset-icon ${getIconClass(a.type)}">${getIcon(a.type)}</div>
+          <div class="asset-body">
+            <h3 class="asset-title">${a.title}</h3>
+            <p class="asset-desc">${a.desc || 'No description'}</p>
+            <div class="asset-meta">
+              <span class="tag tag-product">${a.product}</span>
+              <span class="tag tag-type">${a.type.toUpperCase()}</span>
+              <span class="tag tag-audience">${a.audience}</span>
+              <span class="tag tag-date">${a.date}</span>
+            </div>
+          </div>
+          <div class="asset-actions">
+            ${a.link ? `<a href="${a.link}" target="_blank" rel="noopener">Open ↗</a>` : '<button disabled style="opacity:0.4">No Link</button>'}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // ===== GLOSSARY =====
+    function renderGlossary() {
+      const nav = document.getElementById('glossaryNav');
+      const content = document.getElementById('glossaryContent');
+      const query = (document.getElementById('glossarySearch')?.value || '').toLowerCase().trim();
+
+      nav.innerHTML = Object.keys(glossary).map(cat => {
+        const isActive = cat === activeCategory && !query;
+        return `<button class="glossary-nav-item ${isActive ? 'active' : ''}" onclick="setCategory('${cat}')">${cat}</button>`;
+      }).join('');
+
+      let terms = [];
+      if (query) {
+        Object.values(glossary).forEach(arr => {
+          arr.forEach(t => {
+            if (t.term.toLowerCase().includes(query) || t.def.toLowerCase().includes(query) || t.aliases.some(a => a.toLowerCase().includes(query))) terms.push(t);
+          });
+        });
+      } else {
+        terms = glossary[activeCategory] || [];
+      }
+
+      if (terms.length === 0) {
+        content.innerHTML = `<div class="empty-state"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><p>No terms found.</p></div>`;
+        return;
+      }
+
+      content.innerHTML = terms.map(t => `
+        <div class="term-card">
+          <div class="term-header"><h3 class="term-name">${t.term}</h3><span class="term-badge badge-${t.dept}">${t.dept}</span></div>
+          <p class="term-def">${t.def}</p>
+          <p class="term-aliases"><strong>Also called:</strong> ${t.aliases.join(' · ')}</p>
+          <div class="term-usage"><span class="term-usage-label">Usage Guidance</span>${t.usage}</div>
+        </div>
+      `).join('');
+    }
+
+    function setCategory(cat) {
+      activeCategory = cat;
+      document.getElementById('glossarySearch').value = '';
+      renderGlossary();
+    }
+
+    function filterGlossary() { renderGlossary(); }
+
+    // ===== ADMIN =====
+    function addAsset() {
+      const title = document.getElementById('newTitle').value.trim();
+      const product = document.getElementById('newProduct').value;
+      const type = document.getElementById('newType').value;
+      const audience = document.getElementById('newAudience').value;
+      const link = document.getElementById('newLink').value.trim();
+      const desc = document.getElementById('newDesc').value.trim();
+
+      if (!title) { alert('Please enter an asset name'); return; }
+
+      const newAsset = {
+        id: Date.now(),
+        title, product, type, audience, link, desc,
+        date: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+      };
+      assets.push(newAsset);
+      saveAssets();
+      clearForm();
+      filterAssets();
+      renderAdminTable();
+      alert('Asset added successfully!');
+    }
+
+    function clearForm() {
+      document.getElementById('newTitle').value = '';
+      document.getElementById('newLink').value = '';
+      document.getElementById('newDesc').value = '';
+    }
+
+    function deleteAsset(id) {
+      if (!confirm('Delete this asset?')) return;
+      assets = assets.filter(a => a.id !== id);
+      saveAssets();
+      filterAssets();
+      renderAdminTable();
+    }
+
+    function openEdit(id) {
+      const a = assets.find(x => x.id === id);
+      if (!a) return;
+      editingId = id;
+      document.getElementById('editTitle').value = a.title;
+      document.getElementById('editProduct').value = a.product;
+      document.getElementById('editType').value = a.type;
+      document.getElementById('editAudience').value = a.audience;
+      document.getElementById('editLink').value = a.link || '';
+      document.getElementById('editDesc').value = a.desc || '';
+      document.getElementById('editModal').classList.add('show');
+    }
+
+    function saveEdit() {
+      const a = assets.find(x => x.id === editingId);
+      if (!a) return;
+      a.title = document.getElementById('editTitle').value.trim();
+      a.product = document.getElementById('editProduct').value;
+      a.type = document.getElementById('editType').value;
+      a.audience = document.getElementById('editAudience').value;
+      a.link = document.getElementById('editLink').value.trim();
+      a.desc = document.getElementById('editDesc').value.trim();
+      saveAssets();
+      closeModal();
+      filterAssets();
+      renderAdminTable();
+    }
+
+    function closeModal() {
+      document.getElementById('editModal').classList.remove('show');
+      editingId = null;
+    }
+
+    function renderAdminTable() {
+      const tbody = document.getElementById('adminTableBody');
+      tbody.innerHTML = assets.map(a => `
+        <tr>
+          <td>${a.title}</td>
+          <td><span class="tag tag-product">${a.product}</span></td>
+          <td>${a.type.toUpperCase()}</td>
+          <td>${a.audience}</td>
+          <td class="actions">
+            <button onclick="openEdit(${a.id})">Edit</button>
+            <button onclick="deleteAsset(${a.id})">Delete</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function saveAssets() {
+      localStorage.setItem('pmm_assets', JSON.stringify(assets));
+      document.getElementById('lastUpdated').textContent = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    function exportData() {
+      const data = { assets, exportedAt: new Date().toISOString() };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'pmm-hub-backup-' + new Date().toISOString().split('T')[0] + '.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // ===== BOOT =====
+    checkAuth();
+  </script>
+</body>
+</html>
